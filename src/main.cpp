@@ -1,6 +1,14 @@
 #include <Arduino.h>
 #include <IRremote.h> //INCLUSÃO DE BIBLIOTECA
- 
+#include <PushButton.h>
+
+// DEFININDO BOTÕES
+#define BT_POWER 11
+#define BT_ENTER 10
+#define BT_FREEZE 9
+#define BT_SOURCE 8
+
+#define frequecia 38 // em KHz
 int RECV_PIN = 2; //PINO DIGITAL UTILIZADO PELO FOTORRECEPTOR KY-022
 
 void ircode   (decode_results *results);
@@ -9,19 +17,66 @@ void dumpInfo (decode_results *results);
 void dumpRaw  (decode_results *results);
 void dumpCode (decode_results *results);
 
+//DECLARAÇÃO DE TECLAS CLONADAS
+
+unsigned int bt_power[] = {8800,4450, 550,1650, 550,1650, 550,550, 600,550, 550,550, 600,500, 600,550, 550,1650, 550,1650, 600,500, 600,1600, 600,550, 550,1650, 550,550, 550,1650, 600,500, 600,550, 600,500, 600,500, 600,550, 550,1650, 600,500, 600,500, 600,1650, 550,1650, 550,1650, 600,1600, 550,1650, 600,500, 600,1650, 550,1650, 550,550, 600};
+unsigned int bt_enter[] = {8800,4450, 550,1650, 550,1650, 550,600, 500,550, 600,550, 550,550, 550,550, 550,1700, 550,1650, 550,550, 550,1650, 550,550, 550,1700, 550,550, 550,1650, 550,550, 550,1650, 600,550, 550,1650, 550,550, 550,600, 550,550, 550,600, 500,1650, 550,600, 550,1650, 550,550, 550,1650, 550,1650, 550,1650, 550,1700, 550,550, 550};
+unsigned int bt_freeze[] = {8800,4450, 550,1650, 550,1650, 550,600, 500,600, 550,550, 550,600, 500,600, 550,1650, 550,1650, 550,600, 500,1650, 550,600, 550,1650, 550,600, 500,1650, 550,600, 550,550, 550,1650, 550,600, 500,600, 550,1650, 550,600, 500,600, 500,1650, 600,1650, 550,550, 550,1650, 550,1650, 550,600, 550,1650, 550,1650, 550,600, 500};
+unsigned int bt_source[] = {8800,4450, 550,1650, 550,1650, 550,600, 550,550, 550,600, 500,600, 550,550, 550,1650, 550,1650, 550,600, 550,1650, 550,550, 550,1650, 550,600, 500,1650, 600,550, 550,600, 500,600, 550,1650, 550,1650, 550,550, 550,600, 500,600, 550,1650, 550,1650, 550,1650, 550,600, 500,600, 550,1650, 550,1650, 550,1650, 550,600, 500};
+
+// DECLARANDO OBJETOS DOS BOTÕES
+PushButton BtPower(BT_POWER);
+PushButton BtEnter(BT_ENTER);
+PushButton BtFreeze(BT_FREEZE);
+PushButton BtSource(BT_SOURCE);
+
 IRrecv irrecv(RECV_PIN); //PASSA O PARÂMETRO PARA A FUNÇÃO irrecv
- 
+IRsend emissor;
+
 decode_results results; //VARIÁVEL QUE ARMAZENA OS RESULTADOS (SINAL IR RECEBIDO)
  
 void setup(){
   Serial.begin(9600); //INICIALIZA A SERIAL
   irrecv.enableIRIn(); //INICIALIZA A RECEPÇÃO DE SINAIS IR
+  Serial.println("Configuração finalizada.");
 }
  
 void loop(){
+  // TESTANDO ESTADO DOS BOTÕES
+  BtPower.button_loop();
+  BtEnter.button_loop();
+  BtFreeze.button_loop();
+  BtSource.button_loop();
+  
+  if(BtPower.pressed())
+  {
+    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
+    Serial.println("Enviando Botão de Power");
+  }
+
+  if(BtEnter.pressed())
+  {
+    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
+    Serial.println("Enviando Botão de Enter");
+  }
+
+  if(BtFreeze.pressed())
+  {
+    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
+    Serial.println("Enviando Botão de Freeze");
+  }
+
+  if(BtSource.pressed())
+  {
+    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
+    Serial.println("Enviando Botão de Source");
+  }
+
+  /* ROTINA DE RECEPÇÃO DE SINAIS
+
   //CAPTURA O SINAL IR
   if (irrecv.decode(&results)) {
-    Serial.print("Código HEX: "); //IMPRIME O TEXTO NO MONITOR SERIAL
+    Serial.print("\nCódigo HEX: "); //IMPRIME O TEXTO NO MONITOR SERIAL
     Serial.println(results.value, HEX); //IMPRIME NO MONITOR SERIAL O CÓDIGO IR EM FORMATO HEXADECIMAL
     Serial.print("Código DEC: "); //IMPRIME O TEXTO NO MONITOR SERIAL
     Serial.println(results.value); //IMPRIME NO MONITOR SERIAL O CÓDIGO IR EM FORMATO DECIMAL
@@ -33,7 +88,8 @@ void loop(){
     dumpCode (&results);
     irrecv.resume(); //AGUARDA O RECEBIMENTO DE UM NOVO SINAL IR
   }
-  delay(100); //INTERVALO DE 100 MILISSEGUNDOS
+  */
+  // delay(1000); //INTERVALO DE 100 MILISSEGUNDOS
 }
 
 void  ircode (decode_results *results)
