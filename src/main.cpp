@@ -3,10 +3,12 @@
 #include <PushButton.h>
 
 // DEFININDO BOTÕES
-#define BT_POWER 11
-#define BT_ENTER 10
-#define BT_FREEZE 9
-#define BT_SOURCE 8
+#define BT_POWER 12
+#define BT_ENTER 19
+#define BT_FREEZE 13
+#define BT_SOURCE 18
+#define LED_INFO 2
+#define RETRO_SWITCH 10
 
 #define frequecia 38 // em KHz
 int RECV_PIN = 2; //PINO DIGITAL UTILIZADO PELO FOTORRECEPTOR KY-022
@@ -38,6 +40,10 @@ decode_results results; //VARIÁVEL QUE ARMAZENA OS RESULTADOS (SINAL IR RECEBID
 void setup(){
   Serial.begin(9600); //INICIALIZA A SERIAL
   irrecv.enableIRIn(); //INICIALIZA A RECEPÇÃO DE SINAIS IR
+  pinMode(RETRO_SWITCH, INPUT);
+  pinMode(LED_INFO, OUTPUT);
+  digitalWrite(LED_INFO, HIGH);
+
   Serial.println("Configuração finalizada.");
 }
  
@@ -48,30 +54,49 @@ void loop(){
   BtFreeze.button_loop();
   BtSource.button_loop();
   
-  if(BtPower.pressed())
+  if(digitalRead(RETRO_SWITCH))
   {
-    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
-    Serial.println("Enviando Botão de Power");
-  }
+    if(BtPower.pressed())
+    {
+      emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
+      Serial.println("Enviando Botão de Power");
+      digitalWrite(LED_INFO, HIGH);
+      delay(1500);
+      emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
+    }
 
-  if(BtEnter.pressed())
+    if(BtEnter.pressed())
+    {
+      emissor.sendRaw(bt_enter, sizeof(bt_enter)/sizeof(bt_enter[0]), frequecia);
+      Serial.println("Enviando Botão de Enter");
+      digitalWrite(LED_INFO, HIGH);
+      delay(300);
+    }
+
+    if(BtFreeze.pressed())
+    {
+      emissor.sendRaw(bt_freeze, sizeof(bt_freeze)/sizeof(bt_freeze[0]), frequecia);
+      Serial.println("Enviando Botão de Freeze");
+      digitalWrite(LED_INFO, HIGH);
+      delay(300);
+    }
+
+    if(BtSource.pressed())
+    {
+      emissor.sendRaw(bt_source, sizeof(bt_source)/sizeof(bt_source[0]), frequecia);
+      Serial.println("Enviando Botão de Source");
+      digitalWrite(LED_INFO, HIGH);
+      delay(300);
+    }
+
+    digitalWrite(LED_INFO, LOW);
+  }
+  else
   {
-    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
-    Serial.println("Enviando Botão de Enter");
+    Serial.println("Outro retroprojetor...");
+    /* Outro projetor */
   }
-
-  if(BtFreeze.pressed())
-  {
-    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
-    Serial.println("Enviando Botão de Freeze");
-  }
-
-  if(BtSource.pressed())
-  {
-    emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
-    Serial.println("Enviando Botão de Source");
-  }
-
+  
   /* ROTINA DE RECEPÇÃO DE SINAIS
 
   //CAPTURA O SINAL IR
