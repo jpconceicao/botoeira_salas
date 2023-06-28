@@ -20,11 +20,15 @@ void dumpRaw  (decode_results *results);
 void dumpCode (decode_results *results);
 
 //DECLARAÇÃO DE TECLAS CLONADAS
-
-unsigned int bt_power[] = {8800,4450, 550,1650, 550,1650, 550,550, 600,550, 550,550, 600,500, 600,550, 550,1650, 550,1650, 600,500, 600,1600, 600,550, 550,1650, 550,550, 550,1650, 600,500, 600,550, 600,500, 600,500, 600,550, 550,1650, 600,500, 600,500, 600,1650, 550,1650, 550,1650, 600,1600, 550,1650, 600,500, 600,1650, 550,1650, 550,550, 600};
-unsigned int bt_enter[] = {8800,4450, 550,1650, 550,1650, 550,600, 500,550, 600,550, 550,550, 550,550, 550,1700, 550,1650, 550,550, 550,1650, 550,550, 550,1700, 550,550, 550,1650, 550,550, 550,1650, 600,550, 550,1650, 550,550, 550,600, 550,550, 550,600, 500,1650, 550,600, 550,1650, 550,550, 550,1650, 550,1650, 550,1650, 550,1700, 550,550, 550};
+unsigned int bt_power_epson[] = {8800,4450, 550,1650, 550,1650, 550,550, 600,550, 550,550, 600,500, 600,550, 550,1650, 550,1650, 600,500, 600,1600, 600,550, 550,1650, 550,550, 550,1650, 600,500, 600,550, 600,500, 600,500, 600,550, 550,1650, 600,500, 600,500, 600,1650, 550,1650, 550,1650, 600,1600, 550,1650, 600,500, 600,1650, 550,1650, 550,550, 600};
+unsigned int bt_enter_epson[] = {8800,4450, 550,1650, 550,1650, 550,600, 500,550, 600,550, 550,550, 550,550, 550,1700, 550,1650, 550,550, 550,1650, 550,550, 550,1700, 550,550, 550,1650, 550,550, 550,1650, 600,550, 550,1650, 550,550, 550,600, 550,550, 550,600, 500,1650, 550,600, 550,1650, 550,550, 550,1650, 550,1650, 550,1650, 550,1700, 550,550, 550};
 unsigned int bt_freeze[] = {8800,4450, 550,1650, 550,1650, 550,600, 500,600, 550,550, 550,600, 500,600, 550,1650, 550,1650, 550,600, 500,1650, 550,600, 550,1650, 550,600, 500,1650, 550,600, 550,550, 550,1650, 550,600, 500,600, 550,1650, 550,600, 500,600, 500,1650, 600,1650, 550,550, 550,1650, 550,1650, 550,600, 550,1650, 550,1650, 550,600, 500};
 unsigned int bt_source[] = {8800,4450, 550,1650, 550,1650, 550,600, 550,550, 550,600, 500,600, 550,550, 550,1650, 550,1650, 550,600, 550,1650, 550,550, 550,1650, 550,600, 500,1650, 600,550, 550,600, 500,600, 550,1650, 550,1650, 550,550, 550,600, 500,600, 550,1650, 550,1650, 550,1650, 550,600, 500,600, 550,1650, 550,1650, 550,1650, 550,600, 500};
+
+//DECLARAÇÃO DE VARIÁVEL DE TEMPO DO LED
+unsigned long tempoAtual;
+unsigned long tempoAnterior;
+int estado_led;
 
 // DECLARANDO OBJETOS DOS BOTÕES
 PushButton BtPower(BT_POWER);
@@ -33,21 +37,46 @@ PushButton BtFreeze(BT_FREEZE);
 PushButton BtSource(BT_SOURCE);
 
 IRrecv irrecv(RECV_PIN); //PASSA O PARÂMETRO PARA A FUNÇÃO irrecv
-IRsend emissor;
+IRsend emissor(11);
 
 decode_results results; //VARIÁVEL QUE ARMAZENA OS RESULTADOS (SINAL IR RECEBIDO)
  
 void setup(){
+  tempoAnterior = millis();
+
   Serial.begin(9600); //INICIALIZA A SERIAL
   irrecv.enableIRIn(); //INICIALIZA A RECEPÇÃO DE SINAIS IR
   pinMode(RETRO_SWITCH, INPUT);
   pinMode(LED_INFO, OUTPUT);
   digitalWrite(LED_INFO, HIGH);
+  estado_led = 1;
+
+  pinMode(3, OUTPUT);
+  digitalWrite(3, HIGH);
 
   Serial.println("Configuração finalizada.");
 }
  
 void loop(){
+
+  tempoAtual = millis();
+  if (tempoAtual - tempoAnterior >= 500) {  // Atraso de 1 segundo (1000 milissegundos)
+    if(estado_led)
+    {
+      digitalWrite(LED_INFO, LOW);
+      estado_led = 0;
+    }
+    else
+    {
+      digitalWrite(LED_INFO, HIGH);
+      estado_led = 1;
+    }
+
+
+    tempoAnterior = tempoAtual;  // Atualiza o tempo anterior para o próximo atraso
+  }
+  // Resto do código do loop
+
   // TESTANDO ESTADO DOS BOTÕES
   BtPower.button_loop();
   BtEnter.button_loop();
@@ -58,18 +87,23 @@ void loop(){
   {
     if(BtPower.pressed())
     {
-      emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
-      Serial.println("Enviando Botão de Power");
+      for(int i = 0; i < 20; i++)
+      {
+        emissor.sendRaw(bt_power_epson, sizeof(bt_power_epson)/sizeof(bt_power_epson[0]), frequecia);
+        Serial.println("Enviando Botão de Power");
+      }
       digitalWrite(LED_INFO, HIGH);
+      estado_led = 1;
       delay(1500);
-      emissor.sendRaw(bt_power, sizeof(bt_power)/sizeof(bt_power[0]), frequecia);
+      emissor.sendRaw(bt_power_epson, sizeof(bt_power_epson)/sizeof(bt_power_epson[0]), frequecia);
     }
 
     if(BtEnter.pressed())
     {
-      emissor.sendRaw(bt_enter, sizeof(bt_enter)/sizeof(bt_enter[0]), frequecia);
+      emissor.sendRaw(bt_enter_epson, sizeof(bt_enter_epson)/sizeof(bt_enter_epson[0]), frequecia);
       Serial.println("Enviando Botão de Enter");
       digitalWrite(LED_INFO, HIGH);
+      estado_led = 1;
       delay(300);
     }
 
@@ -78,6 +112,7 @@ void loop(){
       emissor.sendRaw(bt_freeze, sizeof(bt_freeze)/sizeof(bt_freeze[0]), frequecia);
       Serial.println("Enviando Botão de Freeze");
       digitalWrite(LED_INFO, HIGH);
+      estado_led = 1;
       delay(300);
     }
 
@@ -86,15 +121,13 @@ void loop(){
       emissor.sendRaw(bt_source, sizeof(bt_source)/sizeof(bt_source[0]), frequecia);
       Serial.println("Enviando Botão de Source");
       digitalWrite(LED_INFO, HIGH);
+      estado_led = 1;
       delay(300);
     }
-
-    digitalWrite(LED_INFO, LOW);
   }
   else
   {
     Serial.println("Outro retroprojetor...");
-    /* Outro projetor */
   }
   
   /* ROTINA DE RECEPÇÃO DE SINAIS
